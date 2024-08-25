@@ -1,0 +1,92 @@
+ldr r0, =input
+	ldr r1, [r0]
+	
+	ldr r2, LED_BASE
+	ldr r3, [r2]
+	
+	ldr r4, LED_bits
+	ldr r5, [r4]
+	MOV r6, #31
+
+
+
+.text /* executable code follows */
+.global _start
+_start:
+	MOV R0, #31 // used to rotate a bit pattern: 31 positions to the
+// right is equivalent to 1 position to the left
+	LDR R1, LED_BASE // base address of LED lights
+
+	LDR R4, LED_bits
+DO_DISPLAY:
+	CMP R6, #0 // check if any key is presssed
+	BEQ NO_BUTTON
+	MOV R4, R5 // copy SW switch values onto LED displays
+
+WAIT:
+	LDR R6, [R3] // load pushbuttons
+	CMP R6, #0
+	BNE WAIT // wait for button release
+
+NO_BUTTON:
+	STR R4, [R1] // store pattern to the LED displays
+	ROR R4, R0 // rotate the displayed pattern to the left
+	LDR R6, =50000000 // delay counter
+DELAY:
+	SUBS R6, R6, #1
+	BNE DELAY
+	B DO_DISPLAY
+LED_bits:
+	.word 0x0FFFFFFF
+LED_BASE:
+	.word 0xFF200000
+
+.end
+
+
+
+
+
+
+
+
+
+
+.text /* executable code follows */
+.global _start
+_start:
+	MOV R0, #31 // used to rotate a bit pattern: 31 positions to the
+// right is equivalent to 1 position to the left
+	LDR R1, LED_BASE // base address of LED lights
+	LDR R4, LED_BITS
+
+DO_DISPLAY:
+	CMP R6, #0 // check if any key is presssed
+	BEQ NO_BUTTON
+	b NO_BUTTON
+	MOV R4, R5 // copy SW switch values onto LED displays
+
+WAIT:
+	LDR R6, [R3] // load pushbuttons
+	CMP R6, #0
+	BNE WAIT // wait for button release
+
+NO_BUTTON:
+
+	//STR R4, [R1] // store pattern to the LED displays 
+	ADD	R4, R1, R4
+	STR R4, [R1]
+	//ROR R4, R0 // rotate the displayed pattern to the left
+	LDR R6, =50000000 // delay counter
+DELAY:
+	// SUBS R6, R6, #1
+	BNE DELAY
+	B DO_DISPLAY
+	
+LED_BITS:
+	.word 0xffffffe0
+
+LED_BASE:
+	.word 0xFF200000
+
+.end
