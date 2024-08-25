@@ -9,9 +9,13 @@ _start:
 	mov r4, #0
 	mov r5, #0
 	mov r6, #0
+	mov r7, #0
+	mov r11, #0
 	mov r12, #0
-	//r5 is pivot
-	mov r5, #0
+	
+	ldr R7, LED_BASE
+	ldr r11, LED_bits
+
 	// bytes we add/subtract to move up and down address
 	mov r3, #1
 	
@@ -27,6 +31,7 @@ _start:
 	
 	//r4 will be amount of bytes moved/length of string
 	mov r4, #0
+	
 	
 	// if the string is non empty, then we need to iterate
 	cmp r2, #0
@@ -67,7 +72,7 @@ check_input:
 	sub r1, r1, #1
 	
 	cmp r6, r5
-	bne not_equal
+	bne not_palindrome
 	
 	//mov r3, #1 #0
 	
@@ -82,10 +87,20 @@ check_input:
 	mov r12, #5
 	b _exit
 
-not_equal:
+not_palindrome:
 	mov r12, #1
+	
+	add R11, r7, r11
+	str r11, [r7]
+	
 	b _exit
 	
+LED_bits:
+	.word 0xfffffe0
+	
+//adressen til LEDlys, 
+LED_BASE:
+	.word 0xFF200000
 _exit:
 	b .
 
@@ -94,4 +109,7 @@ _exit:
 
 
 .align
-	input: .asciz "gabgag"
+	input: .asciz "ab"
+	
+
+.end
