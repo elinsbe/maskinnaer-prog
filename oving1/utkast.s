@@ -31,6 +31,10 @@ _start:
 	//r4 will be amount of bytes moved/length of string
 	mov r4, #0
 	
+	ldr r8, =detected
+	ldr r9, =not_detected
+	ldr r10, JTAG
+	
 	
 	// if the string is non empty, then we need to iterate
 	cmp r2, #0
@@ -110,20 +114,42 @@ check_input:
 	b _exit
 	
 palindrome:
-	mov r12, #5
+	ldrb r2, [r8]
+	str r2, [r10]
+	
+	cmp r2, #0
+	beq _exit
+	
+	add r8, r8, #1
+	
+	b palindrome
+	
+	add R11, r7, #992
+	str r11, [r7]
+	
+	
+	
+	
+	b _exit
+
+not_palindrome:	
+	ldrb r2, [r9]
+	str r2, [r10]
+	
+	cmp r2, #0
+	beq _exit
+	
+	add r9, r9, #1
+	
+	b not_palindrome
 	
 	add R11, r7, #31
 	str r11, [r7]
 	
 	b _exit
 
-not_palindrome:
-	mov r12, #1
-	
-	add R11, r7, #992
-	str r11, [r7]
-	
-	b _exit
+JTAG:
+	.word 0xFF201000
 	
 	
 //adressen til LEDlys, 
@@ -137,7 +163,13 @@ _exit:
 
 
 .align
-	input: .asciz "A     bb?"
+	input: .asciz "X     bbb"
+	
+	detected: .asciz "Palindrome detected"
+	not_detected: .asciz "Not a palindrome"
+	
+	
+	
 	
 
 .end
