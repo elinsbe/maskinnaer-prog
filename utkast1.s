@@ -57,6 +57,7 @@ get_end_of_string:
 	//sub r4, r4, #1
 	// Now we are going to iterate
 	// over address and string
+	b check_input
 	
 
 check_leftside:
@@ -123,7 +124,7 @@ _exit:
 
 
 .align
-	input: .asciz "a b ba "
+	input: .asciz "abb a"
 	
 
 .end
