@@ -84,6 +84,12 @@ check_input:
 	cmp r6, #0x0000003f
 	moveq r6, r5
 	
+	cmp r5, #97
+	subge r5, r5, #32
+	
+	cmp r6, #97
+	subge r6, r6, #32
+	
 
 	cmp r6, r5
 	bne not_palindrome
@@ -131,7 +137,7 @@ _exit:
 
 
 .align
-	input: .asciz "ab?a"
+	input: .asciz "A     bb?"
 	
 
 .end
