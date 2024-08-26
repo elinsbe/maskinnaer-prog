@@ -74,8 +74,16 @@ check_rightside:
 	cmp r6, #0x00000020
 	beq check_rightside
 	
+
 	
 check_input:
+	
+	cmp r5, #0x0000003f
+	moveq r5, r6
+	
+	cmp r6, #0x0000003f
+	moveq r6, r5
+	
 
 	cmp r6, r5
 	bne not_palindrome
@@ -123,7 +131,7 @@ _exit:
 
 
 .align
-	input: .asciz "a b ba "
+	input: .asciz "ab?a"
 	
 
 .end
