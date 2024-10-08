@@ -95,9 +95,6 @@ asm("ClearScreen: \n\t"
     "   cmp r5, r6 \n\t"
     "   bne increase_height\n\t"
 
-
-
-
     "    POP {R4,R5, R6, R7}\n\t"
     "    POP {LR} \n\t"
     "    BX LR");
@@ -115,6 +112,53 @@ asm("SetPixel: \n\t"
 // TODO: Implement the DrawBlock function in assembly. You need to accept 5 parameters, as outlined in the c declaration above (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int color)
 asm("DrawBlock: \n\t"
     // TODO: Here goes your implementation
+    "PUSH {LR} \n\t"
+    "PUSH {r5, R6, R7, R8, R9}\n\t"
+    //moves x coordinate into r5 and y into r6
+    
+    "mov r5, r0 \n\t"
+    "mov r6, r1 \n\t"
+    //r7 has the width
+    "mov r7, r2 \n\t"
+    "mov r8, #0 \n\t"
+    "mov r9, r3\n\t"
+	"ldr r2, [sp, #24] \n\t"
+
+    //DO NOT TOUCH R2
+
+
+
+    "y_axis: \n\t"
+    "mov r8, #0 \n\t"
+    "x_axis: \n\t"
+
+    // load r5 (new x coor) to the first parameter
+    "mov r0, r5 \n\t"
+    // load r6 (new y coor) to the second parameter
+    "mov r1, r6 \n\t"
+    "bl SetPixel \n\t"
+
+    // add one to the counter for width
+    "add r8, r8, #1 \n\t"
+    // add one to the x coordinate
+    "add r5, r5, #1 \n\t"
+
+    //if counter not equal to the width, coninue
+    "cmp r8, r7 \n\t"
+    "bne x_axis \n\t "
+
+    //removes the added x coordinates
+    "sub r5, r5, r7 \n\t"
+    "add r6, r6, #1 \n\t"
+    
+    "sub r9, r9, #1 \n\t"
+
+    "cmp r9, #0 \n\t"
+    "bne y_axis \n\t"
+
+
+    "POP {R5, R6, R7, R8, R9} \n\t"
+    "POP {LR} \n\t"
     "BX LR");
 
 // TODO: Impelement the DrawBar function in assembly. You need to accept the parameter as outlined in the c declaration above (unsigned int y)
@@ -229,6 +273,7 @@ int main(int argc, char *argv[])
     }
     
     ClearScreen();
+    DrawBlock(0, 0, 15, 15, blue);
         
 
     // HINT: This loop allows the user to restart the game after loosing/winning the previous game
