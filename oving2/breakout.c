@@ -61,9 +61,44 @@ void ClearScreen(void);
 
 asm("ClearScreen: \n\t"
     "    PUSH {LR} \n\t"
-    "    PUSH {R4, R5} \n\t"
+    "    PUSH {R4, R5, R6, R7} \n\t"
     // TODO: Add ClearScreen implementation in assembly here
-    "    POP {R4,R5}\n\t"
+    "   LDR r4, =width \n\t"
+    "   LDRh R4, [R4] \n\t"
+    "   LDR r5, =height \n\t"
+    "   LDRh r5, [r5] \n\t"
+
+    //height is now stored in r4, width in r5
+    "   MOV R0, #0 \n\t"
+    "   MOV R1, #0 \n\t"
+    "   LDR R2, =white \n\t"
+    "   LDR R2, [R2] \n\t"
+    "   MOV r6, #0 \n\t"
+    "   MOV r7, #0 \n\t"
+
+
+
+    "   increase_height: \n\t"
+    "   mov r7, #0 \n\t"
+
+    "   increase_width: \n\t"
+    "   mov r1, r6 \n\t"
+    "   mov r0, r7 \n\t"
+
+    "   bl SetPixel \n\t"
+
+    "   add r7, r7, #1 \n\t"
+    "   cmp r7, r4 \n\t"
+    "   bne increase_width \n\t"
+
+    "   add r6, r6, #1 \n\t"
+    "   cmp r5, r6 \n\t"
+    "   bne increase_height\n\t"
+
+
+
+
+    "    POP {R4,R5, R6, R7}\n\t"
     "    POP {LR} \n\t"
     "    BX LR");
 
@@ -188,7 +223,7 @@ int main(int argc, char *argv[])
 {
     for (int i = 0; i < height; i++){
         for (int j = 0; j < width; j++){
-            SetPixel(j, i, white);
+            SetPixel(j, i, black);
 
         }
     }
