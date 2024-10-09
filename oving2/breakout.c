@@ -162,7 +162,22 @@ asm("DrawBlock: \n\t"
     "BX LR");
 
 // TODO: Impelement the DrawBar function in assembly. You need to accept the parameter as outlined in the c declaration above (unsigned int y)
-asm("DrawBar: \n\t"
+asm("DrawBar: \n\t"   
+    "PUSH {LR} \n\t"
+    "PUSH {r4}\n\t"
+
+    "mov r1, r0\n\t"
+    "mov r0, #0\n\t"
+    "mov r2, #7 \n\t"
+    "mov r3, #45\n\t"
+    //"LDR R4, =blue \n\t"
+    //"LDR R4, [R4] \n\t"
+    //"str sp, [r4]\n\t"
+    "bl DrawBlock \n\t"
+
+    "POP {R4} \n\t"
+    "POP {LR} \n\t"
+
     "BX LR");
 
 asm("ReadUart:\n\t"
@@ -274,6 +289,7 @@ int main(int argc, char *argv[])
     
     ClearScreen();
     DrawBlock(0, 0, 15, 15, blue);
+    DrawBar(45);
         
 
     // HINT: This loop allows the user to restart the game after loosing/winning the previous game
