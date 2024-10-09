@@ -157,7 +157,7 @@ asm("DrawBlock: \n\t"
     "bne y_axis \n\t"
 
 
-    "POP {R5, R6, R7, R8, R9} \n\t"
+    "POP { R5, R6, R7, R8, R9} \n\t"
     "POP {LR} \n\t"
     "BX LR");
 
@@ -186,10 +186,22 @@ asm("ReadUart:\n\t"
     "BX LR");
 
 // TODO: Add the WriteUart assembly procedure here that respects the WriteUart C declaration on line 46
+asm("WriteUart:\n\t"
+    "PUSH {LR} \n\t"
+    "PUSH {R4} \n\t"
+
+    "LDR R4, =0xFF201000 \n\t"
+    "str r0, [r4] \n\t"
+
+    "POP {R4} \n\t"
+    "POP {LR} \n\t"
+    "BX LR"
+);
 
 // TODO: Implement the C functions below
 void draw_ball()
 {
+    
 }
 
 void draw_playing_field()
@@ -290,6 +302,7 @@ int main(int argc, char *argv[])
     ClearScreen();
     DrawBlock(0, 0, 15, 15, blue);
     DrawBar(45);
+    WriteUart('c');
         
 
     // HINT: This loop allows the user to restart the game after loosing/winning the previous game
