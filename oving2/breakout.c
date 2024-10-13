@@ -20,7 +20,7 @@ char font8x8[128][8];        // DON'T TOUCH THIS - this is a forward declaration
 /***
  * TODO: Define your variables below this comment
  */
-unsigned int position_bar = 43;
+unsigned int position_bar = 100;
 
 
 /***
@@ -35,7 +35,7 @@ typedef struct _block
     unsigned int color;
 } Block;
 
-Block list_of_stucts[];
+Block list_of_stucts[10 * 16];
 
 typedef enum _gameState
 {
@@ -46,6 +46,15 @@ typedef enum _gameState
     Exit = 4,
 } GameState;
 GameState currentState = Stopped;
+
+typedef struct _ball{
+    unsigned int pos_x;
+    unsigned int pos_y;
+    int dir_x;
+    int dir_y;
+} Ball;
+
+Ball ball = {.pos_x = 7, .pos_y = 115};
 
 /***
  * Here follow the C declarations for our assembly functions
@@ -214,8 +223,8 @@ asm("WriteUart:\n\t"
 // TODO: Implement the C functions below
 void draw_ball()
 {
-    unsigned int pos = (height/2) - 3;
-    DrawBlock(8, pos, 7, 7, black);   
+    DrawBlock(ball.pos_x, ball.pos_y, 7, 7, black);
+
 }
 
 void draw_playing_field()
@@ -223,7 +232,7 @@ void draw_playing_field()
     unsigned int color_list[] = {red, green, blue};
     int counter_color = 0;
     int start_block = width - (n_cols*15);
-    list_of_stucts[n_cols * 16];
+    //list_of_stucts[n_cols * 16];
     for (int i = start_block; i < width; i += 15){
         for (int j = 0; j < height; j += 15){
             unsigned int color = color_list[counter_color % 3];
@@ -242,9 +251,23 @@ void update_game_state()
         return;
     }
 
+    if (currentState == Lost){
+        write("You Lost!\n");
+        return;
+    }
+
+    if (currentState == Won){
+        write("You Won! \n");
+        return;
+    }
     // TODO: Check: game won? game lost?
 
     // TODO: Update balls position and direction
+    DrawBlock(ball.pos_x, ball.pos_y, 7, 7, white);
+    ball.pos_x = ball.pos_x + (1* 7);
+    ball.pos_y = ball.pos_y + (0 * 7);
+    draw_ball();
+    
 
     // TODO: Hit Check with Blocks
     // HINT: try to only do this check when we potentially have a hit, as it is relatively expensive and can slow down game play a lot
@@ -258,14 +281,14 @@ void update_bar_state()
     int second_byte =((char_read >> 8) & 0xFF);
     if (second_byte == 128 ){
         if ((first_byte == 115) && (position_bar < height-45)){
-            position_bar+=7;
+            position_bar+=(15);
             DrawBar(position_bar);
-            DrawBlock(0, position_bar-7, 7, 7, white);
+            DrawBlock(0, position_bar-15, 7, 15, white);
         }
-        if((first_byte == 119) && (position_bar > 7)){
-            position_bar-=7;
+        if((first_byte == 119) && (position_bar > 15)){
+            position_bar-=(15);
             DrawBar(position_bar);
-            DrawBlock(0, position_bar+45, 7, 7, white);
+            DrawBlock(0, position_bar+45, 7, 15, white);
         }
 
     }
@@ -305,8 +328,8 @@ void play()
             break;
         }
         draw_playing_field();
-        draw_ball();
-        DrawBar(120); // TODO: replace the constant value with the current position of the bar
+        //draw_ball();
+        DrawBar(position_bar); // TODO: replace the constant value with the current position of the bar
     }
     if (currentState == Won)
     {
@@ -327,6 +350,7 @@ void reset()
 {
     // Hint: This is draining the UART buffer
     int remaining = 0;
+    write("YOOOO CHELL\n");
     do
     {
         unsigned long long out = ReadUart();
@@ -343,7 +367,19 @@ void reset()
 
 void wait_for_start()
 {
-    // TODO: Implement waiting behaviour until the user presses either w/s
+    while (1 == 1){
+        int char_read = ReadUart();
+        int first_byte = (char_read & 0xFF);
+        int second_byte =((char_read >> 8) & 0xFF);
+
+        if (second_byte == 128){
+            if (first_byte == 115 || first_byte ==119){
+                currentState = Running;
+                break;
+            }
+        }
+    }
+
 }
 
 int main(int argc, char *argv[])
@@ -354,17 +390,20 @@ int main(int argc, char *argv[])
 
         }
     }
-    
     ClearScreen();
+    ball.dir_x = 1;
+    ball.dir_y = 0;
     //DrawBlock(0, 0, 15, 15, blue);
     //DrawBar(45);
-    WriteUart('c');
-    draw_ball();
-    DrawBar(45);
+    //WriteUart('c');
+    
+    DrawBar(position_bar);
     draw_playing_field();
     
-    write("hello");
-
+    //write("hello");
+    
+    draw_ball();
+ 
     // HINT: This loop allows the user to restart the game after loosing/winning the previous game
     while (1)
     {
