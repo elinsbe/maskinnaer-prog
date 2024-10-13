@@ -20,6 +20,8 @@ char font8x8[128][8];        // DON'T TOUCH THIS - this is a forward declaration
 /***
  * TODO: Define your variables below this comment
  */
+unsigned int position_bar = 43;
+
 
 /***
  * You might use and modify the struct/enum definitions below this comment
@@ -32,6 +34,8 @@ typedef struct _block
     unsigned int pos_y;
     unsigned int color;
 } Block;
+
+Block list_of_stucts[];
 
 typedef enum _gameState
 {
@@ -166,15 +170,24 @@ asm("DrawBar: \n\t"
     "PUSH {LR} \n\t"
     "PUSH {r4}\n\t"
 
+    //position 7
     "mov r1, r0\n\t"
+    // x coordinate 0
     "mov r0, #0\n\t"
+    //width
     "mov r2, #7 \n\t"
+    // height
     "mov r3, #45\n\t"
-    //"LDR R4, =blue \n\t"
-    //"LDR R4, [R4] \n\t"
-    //"str sp, [r4]\n\t"
-    "bl DrawBlock \n\t"
 
+    "LDR R4, =blue \n\t"
+    "LDR R4, [R4] \n\t"
+    "PUSH {r4}\n\t"
+
+
+    "bl DrawBlock \n\t"
+    // will be a bit shorter
+
+    "POP {r4} \n\t"
     "POP {R4} \n\t"
     "POP {LR} \n\t"
 
@@ -201,11 +214,25 @@ asm("WriteUart:\n\t"
 // TODO: Implement the C functions below
 void draw_ball()
 {
-    
+    unsigned int pos = (height/2) - 3;
+    DrawBlock(8, pos, 7, 7, black);   
 }
 
 void draw_playing_field()
 {
+    unsigned int color_list[] = {red, green, blue};
+    int counter_color = 0;
+    int start_block = width - (n_cols*15);
+    list_of_stucts[n_cols * 16];
+    for (int i = start_block; i < width; i += 15){
+        for (int j = 0; j < height; j += 15){
+            unsigned int color = color_list[counter_color % 3];
+            DrawBlock(i, j, 15, 15, color);
+            Block new_block = {.color = color, .pos_x = i, .pos_y = j};
+            list_of_stucts[counter_color] = new_block;
+            counter_color = counter_color + 1;
+        }
+    }
 }
 
 void update_game_state()
@@ -226,19 +253,48 @@ void update_game_state()
 void update_bar_state()
 {
     int remaining = 0;
+    int char_read = ReadUart();
+    int first_byte = (char_read & 0xFF);
+    int second_byte =((char_read >> 8) & 0xFF);
+    if (second_byte == 128 ){
+        if ((first_byte == 115) && (position_bar < height-45)){
+            position_bar+=7;
+            DrawBar(position_bar);
+            DrawBlock(0, position_bar-7, 7, 7, white);
+        }
+        if((first_byte == 119) && (position_bar > 7)){
+            position_bar-=7;
+            DrawBar(position_bar);
+            DrawBlock(0, position_bar+45, 7, 7, white);
+        }
+
+    }
     // TODO: Read all chars in the UART Buffer and apply the respective bar position updates
     // HINT: w == 77, s == 73
     // HINT Format: 0x00 'Remaining Chars':2 'Ready 0x80':2 'Char 0xXX':2, sample: 0x00018077 (1 remaining character, buffer is ready, current character is 'w')
+
+
 }
 
 void write(char *str)
 {
     // TODO: Use WriteUart to write the string to JTAG UART
+    char *copy = str;
+    for (;;){
+        char sent = *copy;
+        WriteUart(sent);
+
+    copy += 1;
+    if (*copy == '\0'){
+        break;
+    }   
+    }
+    
 }
 
 void play()
 {
-    ClearScreen();
+    
     // HINT: This is the main game loop
     while (1)
     {
@@ -300,10 +356,14 @@ int main(int argc, char *argv[])
     }
     
     ClearScreen();
-    DrawBlock(0, 0, 15, 15, blue);
-    DrawBar(45);
+    //DrawBlock(0, 0, 15, 15, blue);
+    //DrawBar(45);
     WriteUart('c');
-        
+    draw_ball();
+    DrawBar(45);
+    draw_playing_field();
+    
+    write("hello");
 
     // HINT: This loop allows the user to restart the game after loosing/winning the previous game
     while (1)
