@@ -22,7 +22,6 @@ char font8x8[128][8];        // DON'T TOUCH THIS - this is a forward declaration
  */
 unsigned int position_bar = 100;
 
-
 /***
  * You might use and modify the struct/enum definitions below this comment
  */
@@ -47,7 +46,8 @@ typedef enum _gameState
 } GameState;
 GameState currentState = Stopped;
 
-typedef struct _ball{
+typedef struct _ball
+{
     unsigned int pos_x;
     unsigned int pos_y;
     int dir_x;
@@ -81,15 +81,13 @@ asm("ClearScreen: \n\t"
     "   LDR r5, =height \n\t"
     "   LDRh r5, [r5] \n\t"
 
-    //height is now stored in r4, width in r5
+    // height is now stored in r4, width in r5
     "   MOV R0, #0 \n\t"
     "   MOV R1, #0 \n\t"
     "   LDR R2, =white \n\t"
     "   LDR R2, [R2] \n\t"
     "   MOV r6, #0 \n\t"
     "   MOV r7, #0 \n\t"
-
-
 
     "   increase_height: \n\t"
     "   mov r7, #0 \n\t"
@@ -127,19 +125,17 @@ asm("DrawBlock: \n\t"
     // TODO: Here goes your implementation
     "PUSH {LR} \n\t"
     "PUSH {r5, R6, R7, R8, R9}\n\t"
-    //moves x coordinate into r5 and y into r6
-    
+    // moves x coordinate into r5 and y into r6
+
     "mov r5, r0 \n\t"
     "mov r6, r1 \n\t"
-    //r7 has the width
+    // r7 has the width
     "mov r7, r2 \n\t"
     "mov r8, #0 \n\t"
     "mov r9, r3\n\t"
-	"ldr r2, [sp, #24] \n\t"
+    "ldr r2, [sp, #24] \n\t"
 
-    //DO NOT TOUCH R2
-
-
+    // DO NOT TOUCH R2
 
     "y_axis: \n\t"
     "mov r8, #0 \n\t"
@@ -156,34 +152,33 @@ asm("DrawBlock: \n\t"
     // add one to the x coordinate
     "add r5, r5, #1 \n\t"
 
-    //if counter not equal to the width, coninue
+    // if counter not equal to the width, coninue
     "cmp r8, r7 \n\t"
     "bne x_axis \n\t "
 
-    //removes the added x coordinates
+    // removes the added x coordinates
     "sub r5, r5, r7 \n\t"
     "add r6, r6, #1 \n\t"
-    
+
     "sub r9, r9, #1 \n\t"
 
     "cmp r9, #0 \n\t"
     "bne y_axis \n\t"
-
 
     "POP { R5, R6, R7, R8, R9} \n\t"
     "POP {LR} \n\t"
     "BX LR");
 
 // TODO: Impelement the DrawBar function in assembly. You need to accept the parameter as outlined in the c declaration above (unsigned int y)
-asm("DrawBar: \n\t"   
+asm("DrawBar: \n\t"
     "PUSH {LR} \n\t"
     "PUSH {r4}\n\t"
 
-    //position 7
+    // position 7
     "mov r1, r0\n\t"
     // x coordinate 0
     "mov r0, #0\n\t"
-    //width
+    // width
     "mov r2, #7 \n\t"
     // height
     "mov r3, #45\n\t"
@@ -191,7 +186,6 @@ asm("DrawBar: \n\t"
     "LDR R4, =blue \n\t"
     "LDR R4, [R4] \n\t"
     "PUSH {r4}\n\t"
-
 
     "bl DrawBlock \n\t"
     // will be a bit shorter
@@ -217,29 +211,136 @@ asm("WriteUart:\n\t"
 
     "POP {R4} \n\t"
     "POP {LR} \n\t"
-    "BX LR"
-);
+    "BX LR");
 
 // TODO: Implement the C functions below
 void draw_ball()
 {
     DrawBlock(ball.pos_x, ball.pos_y, 7, 7, black);
-
 }
 
 void draw_playing_field()
 {
     unsigned int color_list[] = {red, green, blue};
     int counter_color = 0;
-    int start_block = width - (n_cols*15);
-    //list_of_stucts[n_cols * 16];
-    for (int i = start_block; i < width; i += 15){
-        for (int j = 0; j < height; j += 15){
+    int start_block = width - (n_cols * 15);
+    // list_of_stucts[n_cols * 16];
+    for (int i = start_block; i < width; i += 15)
+    {
+        for (int j = 0; j < height; j += 15)
+        {
             unsigned int color = color_list[counter_color % 3];
             DrawBlock(i, j, 15, 15, color);
             Block new_block = {.color = color, .pos_x = i, .pos_y = j};
             list_of_stucts[counter_color] = new_block;
             counter_color = counter_color + 1;
+        }
+    }
+}
+
+void check_collision_edges(void)
+{
+    if (ball.pos_y < 7)
+    {
+        ball.dir_y = 1;
+    }
+    else if (ball.pos_y > height - 7)
+    {
+        ball.dir_y = -1;
+    }
+    if (ball.pos_x < 7)
+    {
+        currentState = Lost;
+    }
+    else if (ball.pos_x > width - 7)
+    {
+        currentState = Won;
+    }
+}
+
+void bar_collision_check(void)
+{
+    if ((ball.pos_x == 7) && (ball.pos_y + 3 >= position_bar) && (ball.pos_y + 3 < position_bar + 45))
+    {
+        if ((position_bar <= ball.pos_y + 3) && (ball.pos_y + 3 < position_bar + 15))
+        {
+            ball.dir_x = 1;
+            ball.dir_y = -1;
+        }
+        else if ((ball.pos_y + 3 >= position_bar + 15) && (ball.pos_y + 3 < position_bar + 30))
+        {
+            ball.dir_x = 1;
+            ball.dir_y = 0;
+        }
+        else
+        {
+            ball.dir_x = 1;
+            ball.dir_y = 1;
+        }
+    }
+}
+
+void block_collision(void)
+{
+    /*if (ball.pos_x +7 >= width - (16*n_cols) ){
+        ball.dir_x = -1;
+        for (int i = 0; i < n_cols*16; i++){
+            Block check = list_of_stucts[i];
+
+            if (check.destroyed != 1) {
+                if (((check.pos_y <= ball.pos_y) && (check.pos_y + 15 >= ball.pos_x))){
+                    if (check.pos_x - ball.pos_x <15){
+                        check.destroyed = 1;
+                        check.color = white;
+                        DrawBlock(check.pos_x, check.pos_y, 15, 15, white);
+
+                    }
+
+                }
+
+            }
+
+           if (check.destroyed == 0){
+
+           }
+        }
+
+    }
+    */
+    if (ball.pos_x >= 150)
+    {
+        for (int i = 0; i < n_cols * 16; i++)
+        {
+            Block *check = &list_of_stucts[i];
+            if (check->destroyed == 0)
+            {
+                if (check->pos_x - ball.pos_x < 7)
+                {
+                    if ((check->pos_y <= ball.pos_y && check->pos_y + 15 > ball.pos_y) || (check->pos_y > ball.pos_y && ball.pos_y + 7 > check->pos_y))
+                    {
+                        check->destroyed = 1;
+                        check->color = white;
+                        ball.dir_x = -1;
+                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
+                    }
+                    /*
+                    else if (check->pos_y >=ball.pos_y && (ball.pos_y + 7 <= check->pos_y + 15)){
+                        check->destroyed = 1;
+                        check->color = white;
+                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
+                    }
+                    */
+                }
+                else if (ball.pos_y - check->pos_y <= 15){
+                    if ((ball.pos_x >= check->pos_x && check->pos_x + 15 > ball.pos_x) || (check->pos_x >ball.pos_x && ball.pos_x + 7 > check->pos_x)){
+                        check->destroyed = 1;
+                        check->color = white;
+                        ball.dir_y = 1;
+                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
+                    }
+                }
+                
+            }
         }
     }
 }
@@ -251,23 +352,29 @@ void update_game_state()
         return;
     }
 
-    if (currentState == Lost){
+    if (currentState == Lost)
+    {
         write("You Lost!\n");
         return;
     }
 
-    if (currentState == Won){
+    if (currentState == Won)
+    {
         write("You Won! \n");
         return;
     }
     // TODO: Check: game won? game lost?
 
     // TODO: Update balls position and direction
+
+    check_collision_edges();
+    bar_collision_check();
+    block_collision();
     DrawBlock(ball.pos_x, ball.pos_y, 7, 7, white);
-    ball.pos_x = ball.pos_x + (1* 7);
-    ball.pos_y = ball.pos_y + (0 * 7);
+
+    ball.pos_x = ball.pos_x + (ball.dir_x * 7);
+    ball.pos_y = ball.pos_y + (ball.dir_y * 7);
     draw_ball();
-    
 
     // TODO: Hit Check with Blocks
     // HINT: try to only do this check when we potentially have a hit, as it is relatively expensive and can slow down game play a lot
@@ -278,58 +385,63 @@ void update_bar_state()
     int remaining = 0;
     int char_read = ReadUart();
     int first_byte = (char_read & 0xFF);
-    int second_byte =((char_read >> 8) & 0xFF);
-    if (second_byte == 128 ){
-        if ((first_byte == 115) && (position_bar < height-45)){
-            position_bar+=(15);
+    int second_byte = ((char_read >> 8) & 0xFF);
+    if (second_byte == 128)
+    {
+        if ((first_byte == 115) && (position_bar < height - 45))
+        {
+            position_bar += (15);
             DrawBar(position_bar);
-            DrawBlock(0, position_bar-15, 7, 15, white);
+            DrawBlock(0, position_bar - 15, 7, 15, white);
         }
-        if((first_byte == 119) && (position_bar > 15)){
-            position_bar-=(15);
+        if ((first_byte == 119) && (position_bar > 15))
+        {
+            position_bar -= (15);
             DrawBar(position_bar);
-            DrawBlock(0, position_bar+45, 7, 15, white);
+            DrawBlock(0, position_bar + 45, 7, 15, white);
         }
-
     }
     // TODO: Read all chars in the UART Buffer and apply the respective bar position updates
     // HINT: w == 77, s == 73
     // HINT Format: 0x00 'Remaining Chars':2 'Ready 0x80':2 'Char 0xXX':2, sample: 0x00018077 (1 remaining character, buffer is ready, current character is 'w')
-
-
 }
 
 void write(char *str)
 {
     // TODO: Use WriteUart to write the string to JTAG UART
     char *copy = str;
-    for (;;){
+    for (;;)
+    {
         char sent = *copy;
         WriteUart(sent);
 
-    copy += 1;
-    if (*copy == '\0'){
-        break;
-    }   
+        copy += 1;
+        if (*copy == '\0')
+        {
+            break;
+        }
     }
-    
 }
 
 void play()
 {
-    
+    int tick = 0;
     // HINT: This is the main game loop
     while (1)
     {
-        update_game_state();
-        update_bar_state();
-        if (currentState != Running)
+        if (tick % 100000 == 0)
         {
-            break;
+            update_game_state();
+            update_bar_state();
+            if (currentState != Running)
+            {
+                break;
+            }
+
+            // draw_ball();
+            DrawBar(position_bar); // TODO: replace the constant value with the current position of the bar
         }
-        draw_playing_field();
-        //draw_ball();
-        DrawBar(position_bar); // TODO: replace the constant value with the current position of the bar
+        tick++;
     }
     if (currentState == Won)
     {
@@ -350,7 +462,6 @@ void reset()
 {
     // Hint: This is draining the UART buffer
     int remaining = 0;
-    write("YOOOO CHELL\n");
     do
     {
         unsigned long long out = ReadUart();
@@ -367,43 +478,46 @@ void reset()
 
 void wait_for_start()
 {
-    while (1 == 1){
+    while (1 == 1)
+    {
         int char_read = ReadUart();
         int first_byte = (char_read & 0xFF);
-        int second_byte =((char_read >> 8) & 0xFF);
+        int second_byte = ((char_read >> 8) & 0xFF);
 
-        if (second_byte == 128){
-            if (first_byte == 115 || first_byte ==119){
+        if (second_byte == 128)
+        {
+            if (first_byte == 115 || first_byte == 119)
+            {
                 currentState = Running;
                 break;
             }
         }
     }
-
 }
 
 int main(int argc, char *argv[])
 {
-    for (int i = 0; i < height; i++){
-        for (int j = 0; j < width; j++){
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
             SetPixel(j, i, black);
-
         }
     }
     ClearScreen();
     ball.dir_x = 1;
     ball.dir_y = 0;
-    //DrawBlock(0, 0, 15, 15, blue);
-    //DrawBar(45);
-    //WriteUart('c');
-    
+    // DrawBlock(0, 0, 15, 15, blue);
+    // DrawBar(45);
+    // WriteUart('c');
+
     DrawBar(position_bar);
     draw_playing_field();
-    
-    //write("hello");
-    
+
+    // write("hello");
+
     draw_ball();
- 
+
     // HINT: This loop allows the user to restart the game after loosing/winning the previous game
     while (1)
     {
