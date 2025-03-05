@@ -128,8 +128,10 @@ asm("SetPixel: \n\t"
 asm("DrawBlock: \n\t"
     // TODO: Here goes your implementation
     "PUSH {LR} \n\t"
-    // technically I could also (and possibly should) use R4, if I pushed and pop.
-    "PUSH {r5, R6, R7, R8, R9}\n\t"
+
+    // I am not using r4 in this, however I wanted to showcase that it is common to use the registers r4 and up
+    // and have r0-r3 parameters. The reason why it is not used is just that I found simpler implementation.
+    "PUSH {r4, r5, R6, R7, R8, R9}\n\t"
     // moves x coordinate into r5 and y into r6
 
     "mov r5, r0 \n\t"
@@ -140,8 +142,8 @@ asm("DrawBlock: \n\t"
     "mov r9, r3\n\t"
     // since we have so many parameters, the fifth is on stack
     //  this is so we don't breach the arm conventions for register use.
-    //  24 is calculated by (6 * 4) since I have pushed 6 registers
-    "ldr r2, [sp, #24] \n\t"
+    //  24 is calculated by (7 * 4) since I have pushed 6 registers
+    "ldr r2, [sp, #28] \n\t"
 
     // DO NOT TOUCH R2
 
@@ -174,7 +176,7 @@ asm("DrawBlock: \n\t"
     "cmp r9, #0 \n\t"
     "bne y_axis \n\t"
 
-    "POP { R5, R6, R7, R8, R9} \n\t"
+    "POP { r4, R5, R6, R7, R8, R9} \n\t"
     "POP {LR} \n\t"
     "BX LR");
 
@@ -262,7 +264,7 @@ void check_collision_edges(void)
     {
         ball.dir_y = -1;
     }
-    if (ball.pos_x < 6)
+    if (ball.pos_x < 7)
     {
         currentState = Lost;
     }
@@ -274,7 +276,8 @@ void check_collision_edges(void)
 
 void bar_collision_check(void)
 {
-    if ((ball.pos_x <= 7) && (ball.pos_y + 3 >= position_bar) && (ball.pos_y + 3 < position_bar + 45))
+    // check if the ball touches, then changes directions as given in the handout
+    if ((ball.pos_x <= 7) && (ball.pos_y >= position_bar) && (ball.pos_y < position_bar + 45))
     {
         if ((position_bar <= ball.pos_y + 3) && (ball.pos_y + 3 < position_bar + 15))
         {
@@ -296,43 +299,28 @@ void bar_collision_check(void)
 
 void block_collision(void)
 {
-    unsigned int ball_x_center = ball.pos_x + 3;
-    unsigned int ball_y_center = ball.pos_y + 3;
     if (ball.pos_x >= width - ((n_cols + 1) * 15))
     {
         for (int i = 0; i < n_cols * 16; i++)
         {
             Block *check = &list_of_stucts[i];
+            // these two check if we are along the right column or row.
             int y_match = (check->pos_y <= ball.pos_y && check->pos_y + 15 > ball.pos_y) || (check->pos_y <= ball.pos_y + 7 && check->pos_y + 15 > ball.pos_y + 7);
             int x_match = (check->pos_x <= ball.pos_x && check->pos_x + 15 > ball.pos_x) || (check->pos_x <= ball.pos_x + 7 && check->pos_x + 15 > ball.pos_x + 7);
             if (check->destroyed == 0)
             {
-                /*if (ball.pos_x - check->pos_x < 7)
-                {
-                    // hit left side
-                    if ((check->pos_y <= ball.pos_y && check->pos_y + 15 > ball.pos_y) || (check->pos_y > ball.pos_y && ball.pos_y + 7 > check->pos_y))
-                    {
-                        check->destroyed = 1;
-                        check->color = white;
-                        ball.dir_x = 1;
-                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("left\n");
-                    }
-                }
-                */
-
                 if (y_match)
                 {
-
+                    // checks collision in right ball
                     if (check->pos_x - ball.pos_x < 7)
                     {
                         check->destroyed = 1;
                         check->color = white;
                         ball.dir_x = -1;
                         DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("right\n");
                     }
 
+                    // checks collision in leftmost pixel in ball
                     else if (check->pos_x + 15 - ball.pos_x < 7)
                     {
                         check->destroyed = 1;
@@ -341,87 +329,26 @@ void block_collision(void)
                         DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
                         write("left\n");
                     }
-                    /*
-                    if (ball.pos_x - check->pos_x < 7)
-                    {
-                        check->destroyed = 1;
-                        check->color = white;
-                        ball.dir_x = 1;
-                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("left\n");
-                    }
-
-                    else if (ball.pos_x - check->pos_x + 15 < 7)
-                    {
-                        check->destroyed = 1;
-                        check->color = white;
-                        ball.dir_x = -1;
-                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("right\n");
-                    }*/
                 }
                 if (x_match)
                 {
+                    // checks collision in top pixel of ball
                     if (check->pos_y + 15 - ball.pos_y < 7)
                     {
                         check->destroyed = 1;
                         check->color = white;
                         ball.dir_y = 1;
                         DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("top\n");
                     }
+                    // checks collision in bottom pixel of ball
                     else if (check->pos_y - ball.pos_y < 7)
                     {
                         check->destroyed = 1;
                         check->color = white;
                         ball.dir_y = -1;
                         DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("bottom\n");
                     }
                 }
-                /*
-                else if (check->pos_x - ball.pos_x < 7)
-                {
-                    // hit right side
-                    if ((check->pos_y <= ball.pos_y && check->pos_y + 15 > ball.pos_y) || (check->pos_y > ball.pos_y && ball.pos_y + 7 > check->pos_y))
-                    // if (check->pos_y)
-                    {
-                        check->destroyed = 1;
-                        check->color = white;
-                        ball.dir_x = -1;
-                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                        write("right\n");
-                    }
-                }
-                */
-
-                /*
-                                // hit top
-                                else if (ball.pos_y - check->pos_y <= 15)
-                                {
-                                    if ((ball.pos_x >= check->pos_x && check->pos_x + 15 > ball.pos_x) || (check->pos_x > ball.pos_x && ball.pos_x + 7 > check->pos_x))
-                                    {
-                                        check->destroyed = 1;
-                                        check->color = white;
-                                        ball.dir_y = 1;
-                                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                                        write("top\n");
-                                    }
-                                }
-                                // hits bottom
-                                // may be flipped
-                                else if (check->pos_y - ball.pos_y <= 15)
-                                {
-                                    if ((ball.pos_x >= check->pos_x && check->pos_x + 15 > ball.pos_x) || (check->pos_x > ball.pos_x && ball.pos_x + 7 > check->pos_x))
-                                    {
-                                        check->destroyed = 1;
-                                        check->color = white;
-                                        ball.dir_y = -1;
-                                        DrawBlock(check->pos_x, check->pos_y, 15, 15, white);
-                                        write("bottom\n");
-                                    }
-                                }
-                                */
             }
         }
     }
@@ -479,6 +406,10 @@ void update_bar_state()
             DrawBar(position_bar);
             DrawBlock(0, position_bar + 45, 7, 15, white);
         }
+        if (first_byte == '\n' || first_byte == '\r')
+        {
+            currentState = Exit;
+        }
     }
     // TODO: Read all chars in the UART Buffer and apply the respective bar position updates
     // HINT: w == 77, s == 73
@@ -518,21 +449,23 @@ void play()
             {
                 break;
             }
-            DrawBar(position_bar); // TODO: replace the constant value with the current position of the bar
+            // DrawBar(position_bar); // TODO: replace the constant value with the current position of the bar
         }
         tick++;
     }
     if (currentState == Won)
     {
         write(won);
+        return;
     }
     else if (currentState == Lost)
     {
         write(lost);
+        return;
     }
     else if (currentState == Exit)
     {
-        reset();
+        return;
     }
     currentState = Stopped;
 }
@@ -547,12 +480,16 @@ void reset()
         if (!(out & 0x8000))
         {
             // not valid - abort reading
-            return;
+            break;
         }
         remaining = (out & 0xFF0000) >> 4;
     } while (remaining > 0);
     ClearScreen();
+    ball.pos_x = 7;
+    ball.pos_y = 112;
     draw_ball();
+    draw_playing_field();
+    DrawBar(90);
 
     // TODO: You might want to reset other state in here
 }
@@ -567,6 +504,7 @@ void wait_for_start()
 
         if (second_byte == 128)
         {
+            // 115 is s and w is 119.
             if (first_byte == 115 || first_byte == 119)
             {
                 currentState = Running;
@@ -590,6 +528,7 @@ int main(int argc, char *argv[])
     list_of_stucts = block_array;
 
     ClearScreen();
+
     // initial direction for ball
     ball.dir_x = 1;
 
@@ -606,6 +545,11 @@ int main(int argc, char *argv[])
         if (currentState == Exit)
         {
             break;
+        }
+        else
+        {
+            currentState = Running;
+            ball.dir_x = 1;
         }
     }
     return 0;
